@@ -1,0 +1,27 @@
+{
+  "name": "thetyster-utils",
+  "version": "1.0.0",
+  "description": "Utilities used by @thetyster.",
+  "main": "index.js",
+  "type": "module",
+  "scripts": {
+    "test": "vitest",
+    "build": "tsc"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theTyster/thetyster-utils.git"
+  },
+  "keywords": [
+    "utilities"
+  ],
+  "author": "thetyster",
+  "license": "GPL-3.0",
+  "bugs": {
+    "url": "https://github.com/theTyster/thetyster-utils/issues"
+  },
+  "homepage": "https://github.com/theTyster/thetyster-utils#readme",
+  "devDependencies": {
+    "vitest": "^2.0.4"
+  }
+}
