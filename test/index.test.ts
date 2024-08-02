@@ -1,6 +1,7 @@
 import { describe, test, expect } from "vitest";
 import Utils, {
   CripToe,
+  type ExportedWraps,
   calcAge,
   ranNumG,
   makeArray,
@@ -44,6 +45,7 @@ describe("Utils", () => {
   describe.each(variation)("CripToe", async (safeURL, toBase64) => {
     const C = new CripToe("Test Message");
     const secret = await C.encrypt({ safeURL, toBase64 });
+    const { wrappingKey, wrappedKey } = await C.wrapKey({ export: true }) as ExportedWraps;
     class CripToeTest extends CripToe {
       constructor() {
         super("Inner Class Tests");
@@ -71,9 +73,20 @@ describe("Utils", () => {
       test("CripToe should have a cipher property initially.", () => {
         expect(C).not.toHaveProperty("cipher");
       });
+
+      test("'random' should always be different.", () => {
+        expect(C.random).not.toBe(C.random);
+        expect(C.random).not.toMatchObject(C.random);
+        expect(C.random).not.toEqual(C.random);
+        expect(C.random).not.toStrictEqual(C.random);
+        expect(CripToe.random()).not.toBe(CripToe.random());
+        expect(CripToe.random()).not.toMatchObject(CripToe.random());
+        expect(CripToe.random()).not.toEqual(CripToe.random());
+        expect(CripToe.random()).not.toStrictEqual(CripToe.random());
+      })
     });
 
-    describe("Methods", () => {
+    describe.shuffle("Methods", () => {
       test("Sha256 should return a hashed string", async () => {
         expect(await C.sha256()).toMatchSnapshot();
       });
@@ -91,6 +104,23 @@ describe("Utils", () => {
             `${secret.initVector} was falsey. So, not a Uint8Array nor did it pass the base64 test.`,
           )
           .toBeTruthy();
+      });
+
+      test("Should create a wrapping key.", async () => {
+        expect(wrappedKey, "Should be a JWK key.").toBeInstanceOf(ArrayBuffer);
+        expect(wrappedKey).not.toBe(secret.key);
+        expect(wrappedKey).toBe(await C.wrapKey());
+        expect(wrappingKey).toBeTypeOf('string');
+        expect(wrappingKey).not.toBe(secret.key);
+      })
+
+      test("Should unwrap a key.", async () => {
+        const C2 = new CripToe("Wrapping Test");
+        await C2.unwrapKey(wrappedKey, wrappingKey);
+        //@ts-ignore Accessing a private property for testing.
+        expect(C2._cripKey).toStrictEqual(secret.key);
+        //@ts-ignore Accessing a private property for testing.
+        expect(await C2.decrypt(secret.cipher, C2._cripKey, C.initVector )).toBe("Test Message");
       });
 
       describe("URL encoding", () => {
