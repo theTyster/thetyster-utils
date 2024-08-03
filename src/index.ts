@@ -20,9 +20,31 @@ export const ENCRYPT_RETURNS = {
   initVector: true ? String() : new Uint8Array(),
 } as const;
 
+export type EncryptReturnsSafeURL = {
+ readonly cipher: string;
+ readonly key: CryptoKey;
+ readonly initVector: string;
+};
+
+export type EncryptReturnsBase64 = {
+ readonly cipher: string;
+ readonly key: CryptoKey;
+ readonly initVector: string;
+};
+
 export type ExportedWraps = {
-  wrappingKey: string;
-  wrappedKey: ArrayBuffer;
+ readonly wrappingKey: string;
+ readonly wrappedKey: ArrayBuffer;
+};
+
+export type ExportedWrapsSafeURL = {
+ readonly wrappingKey: string;
+ readonly wrappedKey: string;
+};
+
+export type ExportedWrapsBase64 = {
+ readonly wrappingKey: string;
+ readonly wrappedKey: string;
 };
 
 export type ENCRYPT_RETURNS = typeof ENCRYPT_RETURNS;
@@ -143,10 +165,10 @@ export class CripToe {
       );
 
     if (typeof cipher === "string") {
-      cipher = CripToe.base64toArrayBuffer(cipher);
+      cipher = CripToe.base64ToArrayBuffer(cipher);
     }
     if (typeof initVector === "string") {
-      initVector = new Uint8Array(CripToe.base64toArrayBuffer(initVector));
+      initVector = new Uint8Array(CripToe.base64ToArrayBuffer(initVector));
     }
 
     const decrypted = await this.CRYP.decrypt(
@@ -199,7 +221,7 @@ export class CripToe {
    * Even if this function is called multiple times the wrapped key will only be generated once.
    * Subsequent calls will simply return the originally wrapped key.
    **/
-  async wrapKey(opts?: { export?: boolean }) {
+  async wrapKey(opts: { export: boolean, safeURL?: boolean, toBase64?: boolean } = { export: false }) {
     // Check for encryption key.
     if (!this._cripKey) {
       this._cripKey = await this.genCripKey()
@@ -234,13 +256,26 @@ export class CripToe {
 
     this._wrappedKey = wrappedKey;
 
-    if (opts?.export) {
+    if (opts.export) {
       const wrappingKeyJwk = await this.CRYP.exportKey("jwk", wrappingKey);
       const wrappingKeyString = JSON.stringify(wrappingKeyJwk);
       const exported = {
         wrappingKey: wrappingKeyString,
         wrappedKey: this._wrappedKey,
-      };
+      } as ExportedWraps;
+      if (opts.safeURL) {
+        return {
+          wrappingKey: CripToe.urlSafeBase64(wrappingKeyString),
+          wrappedKey: CripToe.urlSafeBase64(this._wrappedKey),
+        } as ExportedWrapsSafeURL;
+      } else if (opts.toBase64) {
+        return {
+          wrappingKey: btoa(wrappingKeyString),
+          wrappedKey: CripToe.arrayBufferToBase64(this._wrappedKey),
+        } as ExportedWrapsBase64;
+      } else {
+        return exported as ExportedWraps;
+      }
       return exported as ExportedWraps;
     } else {
       return this._wrappedKey;
@@ -263,7 +298,7 @@ export class CripToe {
    * The Initial Vector, or nonce, used to salt the encryption.
    **/
   get initVector(): ENCRYPT_RETURNS["initVector"] {
-    return CripToe.arrayBufferToBase64(this._iv);
+    return CripToe.arrayBufferToBase64(this._iv.buffer);
   }
 
   /**
@@ -306,7 +341,7 @@ export class CripToe {
   /**
    * Converts a base64 string into an Array Buffer
    **/
-  static base64toArrayBuffer(base64: string) {
+  static base64ToArrayBuffer(base64: string) {
     const normalizedbase64 = CripToe.decodeBase64SafeURL(base64);
     const string = atob(normalizedbase64);
     const buffer = new ArrayBuffer(string.length);
