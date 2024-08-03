@@ -1,3 +1,7 @@
+/**
+ * Used to determine the length of Uint8Array's for random values.
+ **/
+const intArrLength = 12;
 /**Type Helper*/
 export const ENCRYPT_RETURNS = {
     cipher: true ? undefined : true ? String() : new ArrayBuffer(0),
@@ -17,11 +21,23 @@ export class CripToe {
     /**
      * @param message - String to be encrypted or hashed.
      **/
-    constructor(message) {
+    constructor(message, password) {
         this.message = message;
         this.encoded = new TextEncoder().encode(message);
+        // ENSURES THAT THE CIPHER IS ONLY GENERATED ONCE.
         this._cipher = undefined;
-        this._cripKey = undefined;
+        // GENERATES THE ENCRYPTION KEY
+        // This method uses a generator function to allow for the key to only be
+        // generated when needed and only once. Additionally, this method is
+        // scalable to allow for password based keys. If that is needed one day.
+        this._cripKeyWalk = this.genCripKey(password ? password : undefined);
+        this._cripKeyWalk.next().then((key) => {
+            this._cripKey = key.value;
+        });
+        // ENSURES THAT THE WRAP KEY IS ONLY GENERATED ONCE.
+        // Requires that salt be provided. Salt is not provided here. Although, you
+        // can use 'Cripto.random()' to generate salt.
+        this._wrappedKey = undefined;
     }
     /**
      * Hashes any string into a Sha256 hash. By default will hash the mesage initially provided to the constructor.
@@ -44,7 +60,7 @@ export class CripToe {
      **/
     async encrypt(options) {
         if (!this._cripKey) {
-            await this.genCripKey();
+            this._cripKey = await this._cripKeyWalk.next().then((key) => key.value);
         }
         if (!this._cipher) {
             const iv = this._iv;
@@ -100,6 +116,65 @@ export class CripToe {
         }, key, cipher);
         return new TextDecoder("utf-8").decode(decrypted);
     }
+    async unwrapKey(wrappedKey, wrappingKeyString) {
+        const wrappingKeyJwk = JSON.parse(wrappingKeyString);
+        const wrappingKey = await this.CRYP.importKey("jwk", wrappingKeyJwk, {
+            name: "AES-KW",
+        }, true, ["unwrapKey"]);
+        const unWrappedKey = await this.CRYP.unwrapKey("jwk", wrappedKey, wrappingKey, {
+            name: "AES-KW",
+        }, {
+            name: "AES-GCM",
+            length: 256,
+        }, true, ["decrypt"]);
+        this._wrappedKey = wrappedKey;
+        this._cripKey = unWrappedKey;
+        return true;
+    }
+    /**
+     * Wraps the key in JWK (Json Web Key) format using AES-KW.
+     * The benefit of AES-KW is that it doesn't require an Initialization Vector.
+     * See: https://developer.mozilla.org/en-US/docs/Web/API/SubtleCrypto/wrapKey
+     *
+     * Even if this function is called multiple times the wrapped key will only be generated once.
+     * Subsequent calls will simply return the originally wrapped key.
+     **/
+    async wrapKey(opts) {
+        // Check for encryption key.
+        if (!this._cripKey) {
+            this._cripKey = await this.genCripKey()
+                .next()
+                .then((key) => key.value);
+        }
+        if (this._wrappedKey) {
+            return this._wrappedKey;
+        }
+        // Generate a key to wrap the key.
+        // Intentionally not using the same method for generating a key as the one used to encrypt.
+        /**TODO: Need to use a password based key once this is working?
+         * Maybe, we just use this key instead???
+         **/
+        const wrappingKey = await this.CRYP.generateKey({
+            name: "AES-KW",
+            length: 256,
+        }, true, ["wrapKey", "unwrapKey"]);
+        const wrappedKey = await this.CRYP.wrapKey("jwk", this._cripKey, wrappingKey, {
+            name: "AES-KW",
+        });
+        this._wrappedKey = wrappedKey;
+        if (opts?.export) {
+            const wrappingKeyJwk = await this.CRYP.exportKey("jwk", wrappingKey);
+            const wrappingKeyString = JSON.stringify(wrappingKeyJwk);
+            const exported = {
+                wrappingKey: wrappingKeyString,
+                wrappedKey: this._wrappedKey,
+            };
+            return exported;
+        }
+        else {
+            return this._wrappedKey;
+        }
+    }
     /**
      * The message encrypted into base64.
      **/
@@ -126,8 +201,6 @@ export class CripToe {
      **/
     static urlSafeBase64(cipher) {
         function stringCleaner(base64) {
-            console.log("cleaning: ", base64);
-            console.log("caller was: ", new Error().stack);
             return base64.replace(/\=/g, ".").replace(/\+/g, "-").replace(/\//g, "_");
         }
         if (cipher instanceof ArrayBuffer) {
@@ -135,17 +208,16 @@ export class CripToe {
             const urlSafe = stringCleaner(base64);
             return urlSafe;
         }
-        else /*if (mightBeBase64(cipher)) */ {
+        else {
             const urlSafe = stringCleaner(cipher);
             return urlSafe;
-        } /*else throw new Error(`Not a base64 string: ${cipher}`)*/
+        }
         ;
     }
     /**
      * Takes a base64 string that has been formatted with @link CripToe.urlSafeBase64
      **/
     static decodeBase64SafeURL(urlSafe) {
-        console.log("decoding: ", urlSafe);
         return urlSafe.replace(/\_/g, "/").replace(/\-/g, "+").replace(/\./g, "=");
     }
     /**
@@ -167,9 +239,11 @@ export class CripToe {
         }
         return buffer;
     }
+    isNode = typeof process === "object" && process + "" === "[object process]";
     _cipher;
     _cripKey;
-    isNode = typeof process === "object" && process + "" === "[object process]";
+    _cripKeyWalk;
+    _wrappedKey;
     /**Provides Node and browser compatibility for crypto.*/
     CRYP = (() => {
         if (this.isNode) {
@@ -189,23 +263,51 @@ export class CripToe {
         else
             throw new Error("You are not in a supported environment.");
     })();
-    _iv = (() => {
+    get random() {
         if (this.isNode) {
-            return crypto.getRandomValues(new Uint8Array(12));
+            return crypto.getRandomValues(new Uint8Array(intArrLength));
         }
         else if ("Not in Node") {
-            return window.crypto.getRandomValues(new Uint8Array(12));
+            return window.crypto.getRandomValues(new Uint8Array(intArrLength));
+        }
+        else
+            throw new Error("You are not in a supported environment.");
+    }
+    static random = () => {
+        if (typeof process === "object" && process + "" === "[object process]") {
+            return crypto.getRandomValues(new Uint8Array(intArrLength));
+        }
+        else if ("Not in Node") {
+            return window.crypto.getRandomValues(new Uint8Array(intArrLength));
+        }
+        else
+            throw new Error("You are not in a supported environment.");
+    };
+    /**
+     * Intentional dupe of 'get random()'. To avoid accidentally reusing an initVector
+     **/
+    _iv = (() => {
+        if (this.isNode) {
+            return crypto.getRandomValues(new Uint8Array(intArrLength));
+        }
+        else if ("Not in Node") {
+            return window.crypto.getRandomValues(new Uint8Array(intArrLength));
         }
         else
             throw new Error("You are not in a supported environment.");
     })();
     /**The key used to encrypt and decrypt the message.**/
-    async genCripKey() {
-        if (!this._cripKey)
-            this._cripKey = await this.CRYP.generateKey({
+    async *genCripKey(password) {
+        yield undefined;
+        if (!password) {
+            return await this.CRYP.generateKey({
                 name: "AES-GCM",
                 length: 256,
             }, true, ["encrypt", "decrypt"]);
+        }
+        else {
+            return await this.CRYP.importKey("raw", new TextEncoder().encode(password), { name: "PBKDF2" }, false, ["deriveKey", "deriveBits"]);
+        }
     }
 }
 export const calcAge = (anniversary) => Math.round(Math.abs(new Date(anniversary).getTime() - new Date().getTime()) /
@@ -257,10 +359,10 @@ export function isBase64(str) {
     if (!len || len % 4 !== 0 || notBase64.test(str)) {
         return false;
     }
-    const firstPaddingChar = str.indexOf('=');
-    return firstPaddingChar === -1 ||
+    const firstPaddingChar = str.indexOf("=");
+    return (firstPaddingChar === -1 ||
         firstPaddingChar === len - 1 ||
-        (firstPaddingChar === len - 2 && str[len - 1] === '=');
+        (firstPaddingChar === len - 2 && str[len - 1] === "="));
 }
 const Utils = {
     ENCRYPT_RETURNS,
