@@ -13,8 +13,8 @@ describe("Utils", () => {
   test("should be defined", () => {
     const u = Utils;
     expect(u).toBeDefined();
-    expect(u.ENCRYPT_RETURNS).toBeDefined();
     expect(u.CripToe).toBeDefined();
+    expect(u.CripToe).toHaveProperty("random");
     expect(u.calcAge).toBeDefined();
     expect(u.ranNumG).toBeDefined();
     expect(u.makeArray).toBeDefined();

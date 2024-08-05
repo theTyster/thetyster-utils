@@ -1,5 +1,14 @@
-import { ENCRYPT_RETURNS } from "./constants";
-import * as CripToe from "./CripToe";
+import * as C from "./CripToe";
+
+export const CripToe = C.default;
+
+export type EncryptReturns = C.EncryptReturns;
+export type EncryptReturnsSafeURL = C.EncryptReturnsSafeURL;
+export type EncryptReturnsBase64 = C.EncryptReturnsBase64;
+export type WrapKeyReturns = C.WrapKeyReturns;
+export type ExportedWrapsSafeURL = C.ExportedWrapsSafeURL;
+export type ExportedWrapsBase64 = C.ExportedWrapsBase64;
+export type ExportedWraps = C.ExportedWraps;
 
 export const calcAge = (anniversary: string): number =>
   Math.round(
@@ -73,7 +82,6 @@ export function isBase64(str: string): boolean {
 }
 
 const Utils = {
-  ENCRYPT_RETURNS,
   CripToe,
   calcAge,
   ranNumG,

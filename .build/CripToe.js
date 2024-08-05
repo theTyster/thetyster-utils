@@ -1,8 +1,4 @@
 import { isBase64 } from "./index";
-/**
- * Used to determine the length of Uint8Array's for random values.
- **/
-const intArrLength = 12;
 /** Provides Sha256 hashing and AES-GCM encryption and decryption of strings.*/
 export default class CripToe {
     /**
@@ -16,7 +12,10 @@ export default class CripToe {
     /**
      * @param message - String to be encrypted or hashed.
      **/
-    constructor(message, password) {
+    constructor(message, password, opts) {
+        if (message.length > 1260 && !opts?.silenceWarnings) {
+            console.warn(`WARNING: The message supplied to ${this.constructor.name} is possibly too long for a URL.\nTests show that messages longer than 1,260 characters may exceed the maximum recommended length for a URL, which is 2,084 characters.\nlength:\n${message.length}\nmessage:\n${message}`);
+        }
         this.message = message;
         this.encoded = new TextEncoder().encode(message);
         // ENSURES THAT THE CIPHER IS ONLY GENERATED ONCE.
@@ -242,15 +241,17 @@ export default class CripToe {
      * {@see CripToe.encrypted}
      **/
     static encodeUrlSafeBase64(cipher) {
-        if (cipher instanceof ArrayBuffer) {
-            const base64 = CripToe.arrayBufferToBase64(cipher);
+        function stringCleaner(base64) {
             const urlSafe = encodeURIComponent(base64);
             return urlSafe;
         }
+        if (cipher instanceof ArrayBuffer) {
+            const base64 = CripToe.arrayBufferToBase64(cipher);
+            return stringCleaner(base64);
+        }
         else if (!isBase64(cipher)) {
             const base64 = btoa(cipher);
-            const urlSafe = encodeURIComponent(base64);
-            return urlSafe;
+            return stringCleaner(base64);
         }
         else {
             return cipher;
@@ -340,3 +341,7 @@ export default class CripToe {
         }
     }
 }
+/**
+ * Used to determine the length of Uint8Array's for random values.
+ **/
+const intArrLength = 12;

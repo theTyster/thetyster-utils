@@ -1,5 +1,5 @@
-import { ENCRYPT_RETURNS } from "./constants";
-import CripToe from "./CripToe";
+import * as C from "./CripToe";
+export const CripToe = C.default;
 export const calcAge = (anniversary) => Math.round(Math.abs(new Date(anniversary).getTime() - new Date().getTime()) /
     8.64e7 /
     365);
@@ -55,7 +55,6 @@ export function isBase64(str) {
         (firstPaddingChar === len - 2 && str[len - 1] === "="));
 }
 const Utils = {
-    ENCRYPT_RETURNS,
     CripToe,
     calcAge,
     ranNumG,
