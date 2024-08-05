@@ -1,21 +1,67 @@
 import { describe, test, expect } from "vitest";
 import CripToe, {
-  type ExportedWrapsSafeURL,
   type EncryptReturnsSafeURL,
+  type EncryptReturnsBase64,
+  type EncryptReturns,
+  type WrapKeyReturns,
+  type ExportedWrapsSafeURL,
+  type ExportedWrapsBase64,
+  type ExportedWraps,
 } from "../src/CripToe";
 import { isBase64 } from "../src/index";
 
-async function setup() {
-    const longTestMessage = `A really long test message that may be encrypted to test whether a really long message can remain under 2000 characters in length for a URL. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected.  This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected.This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected.This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryp`;
-    const C = new CripToe(longTestMessage);
-    const secret = (await C.encrypt({
-      safeURL: true,
+async function setup(safeURL: boolean, toBase64: boolean) {
+  const longTestMessage = `A really long test message that may be encrypted to test whether a really long message can remain under 2000 characters in length for a URL. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected.  This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected.This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected.This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryp`;
+  const C = new CripToe(longTestMessage);
+  let secret: EncryptReturns;
+  let wrappingKeyReturn: WrapKeyReturns["wrappingKey"];
+  let wrappedKeyReturn: WrapKeyReturns["wrappedKey"];
+
+  // Typings for secret.
+  if (safeURL) {
+    secret = (await C.encrypt({
+      safeURL,
     })) as EncryptReturnsSafeURL;
-    const { wrappingKey, wrappedKey } = (await C.wrapKey({
+  } else {
+    secret = (await C.encrypt({
+      toBase64,
+    })) as EncryptReturns;
+  }
+
+  // Typings for wrappingKey and wrapped
+  if (safeURL && toBase64) {
+    let { wrappingKey, wrappedKey } = (await C.wrapKey({
       export: true,
-      safeURL: true,
+      safeURL,
+      toBase64,
+    })) as ExportedWrapsBase64;
+    wrappingKeyReturn = wrappingKey;
+    wrappedKeyReturn = wrappedKey;
+  } else if (safeURL) {
+    let { wrappingKey, wrappedKey } = (await C.wrapKey({
+      export: true,
+      safeURL,
     })) as ExportedWrapsSafeURL;
-    return { C, secret, longTestMessage, wrappingKey, wrappedKey };
+    wrappingKeyReturn = wrappingKey;
+    wrappedKeyReturn = wrappedKey;
+  } else if (toBase64) {
+    let { wrappingKey, wrappedKey } = (await C.wrapKey({
+      export: true,
+      toBase64,
+    })) as ExportedWrapsBase64;
+    wrappingKeyReturn = wrappingKey;
+    wrappedKeyReturn = wrappedKey;
+  } else {
+    let { wrappingKey, wrappedKey } = (await C.wrapKey({
+      export: true,
+    })) as ExportedWraps;
+    wrappingKeyReturn = wrappingKey;
+    wrappedKeyReturn = wrappedKey;
+  }
+
+  const wrappingKey = wrappingKeyReturn;
+  const wrappedKey = wrappedKeyReturn;
+  return { C, secret, longTestMessage, wrappingKey, wrappedKey };
 }
 
 //prettier-ignore
@@ -36,7 +82,11 @@ const variation = [
 describe.each(variation)(
   "CripToe test: #%# safeURL: %s, toBase64: %s",
   async (safeURL, toBase64) => {
-    const { C, secret, longTestMessage, wrappingKey, wrappedKey } = await setup();
+    const { C, secret, longTestMessage, wrappingKey, wrappedKey } = await setup(
+      safeURL,
+      toBase64,
+    );
+    console.log("wrappingkey: \n", wrappingKey);
     class CripToeTest extends CripToe {
       constructor() {
         super("Inner Class Tests");
@@ -54,7 +104,7 @@ describe.each(variation)(
       test("CripToe should have an initVector property", () => {
         expect(C).toHaveProperty("initVector");
         expect(C.initVector).toBeTypeOf("string");
-        expect(isBase64(C.initVector as string)).toBeTruthy();
+        expect(isBase64(C.initVector)).toBeTruthy();
       });
 
       test("CripToe should not have a key property initially.", () => {
@@ -89,46 +139,64 @@ describe.each(variation)(
         expect(secret.key).toBeInstanceOf(CryptoKey);
         expect
           .soft(
-            !!isBase64(secret.initVector) ||
+            !!(secret.initVector instanceof Uint8Array) ||
+              !!isBase64(secret.initVector) ||
               !!isBase64(CripToe.decodeUrlSafeBase64(secret.initVector)),
             `${secret.initVector} was falsey. So, not a Uint8Array nor did it pass the base64 test.`,
           )
           .toBeTruthy();
-        expect(typeof secret.cipher === "string").toBeTruthy();
-        expect(
-          isBase64(CripToe.decodeUrlSafeBase64(secret.cipher)),
-        ).toBeTruthy();
+        if (toBase64 || safeURL) {
+          expect(typeof secret.cipher === "string").toBeTruthy();
+          if (typeof secret.cipher === "string") {
+            expect(
+              isBase64(CripToe.decodeUrlSafeBase64(secret.cipher)),
+            ).toBeTruthy();
+          }
+        }
       });
 
-      test("Should create a wrapping key.", async () => {
-        expect(wrappedKey, "Should be a string.").toBeTypeOf("string");
-        expect(
-          isBase64(wrappedKey),
-          "Wrapped Key shold not be a base64 string",
-        ).toBeFalsy();
-        expect(
-          isBase64(CripToe.decodeUrlSafeBase64(wrappedKey)),
-          "SafeURL decoded wrapped Key shold be a base64 string",
-        ).toBeTruthy();
-        expect(wrappingKey, "Wrapping Key is not a string.").toBeTypeOf(
-          "string",
-        );
-      });
+      test.runIf(safeURL || toBase64)(
+        "Should create a wrapping key.",
+        async () => {
+          if (typeof wrappedKey === "string") {
+            expect(wrappedKey, "Should be a string.").toBeTypeOf("string");
+            if (safeURL) {
+              expect(
+                isBase64(wrappedKey),
+                "Wrapped Key should not be a base64 string",
+              ).toBeFalsy();
+            } else {
+              expect(isBase64(wrappedKey)).toBeTruthy();
+            }
+            expect(
+              safeURL
+                ? isBase64(CripToe.decodeUrlSafeBase64(wrappedKey))
+                : isBase64(wrappedKey),
+              "SafeURL decoded wrapped Key should be a base64 string",
+            ).toBeTruthy();
+            expect(wrappingKey, "Wrapping Key is not a string.").toBeTypeOf(
+              "string",
+            );
+          }
+        },
+      );
 
       test("Should unwrap a key.", async () => {
         const C2 = new CripToe("Wrapping Test");
-        const wrappedKeyB64 = CripToe.decodeUrlSafeBase64(wrappedKey);
-        const wrappedKeyArrBuff = CripToe.base64ToArrayBuffer(wrappedKeyB64);
-        const wrappingKeyJWK = Buffer.from(wrappingKey, "base64url").toString(
-          "utf-8",
-        );
-        await C2.unwrapKey(wrappedKeyArrBuff, wrappingKeyJWK);
-        //@ts-ignore Accessing a private property for testing.
-        expect(C2._cripKey).toStrictEqual(secret.key);
-        //@ts-ignore Accessing a private property for testing.
-        expect(await C2.decrypt(secret.cipher, C2._cripKey, C.initVector)).toBe(
-          longTestMessage,
-        );
+        if (typeof wrappedKey === "string") {
+          const wrappedKeyB64 = CripToe.decodeUrlSafeBase64(wrappedKey);
+          const wrappedKeyArrBuff = CripToe.base64ToArrayBuffer(wrappedKeyB64);
+          const wrappingKeyJWK = Buffer.from(wrappingKey, "base64url").toString(
+            "utf-8",
+          );
+          await C2.unwrapKey(wrappedKeyArrBuff, wrappingKeyJWK);
+          //@ts-ignore Accessing a private property for testing.
+          expect(C2._cripKey).toStrictEqual(secret.key);
+          expect(
+            //@ts-ignore Accessing a private property for testing.
+            await C2.decrypt(secret.cipher, C2._cripKey, C.initVector),
+          ).toBe(longTestMessage);
+        }
       });
 
       test("Should decrypt an encrypted string", async () => {
@@ -147,7 +215,11 @@ describe.each(variation)(
 let iterations = 101;
 while (iterations--) {
   describe(`URL Encoding test: ${iterations}`, async () => {
-    const { C, secret, longTestMessage, wrappingKey, wrappedKey } = await setup();
+    const { C, secret, wrappedKey } = (await setup(true, true)) as {
+      C: CripToe;
+      secret: EncryptReturnsSafeURL;
+      wrappedKey: string;
+    };
     test("CripToe.encrypted getter should return a base64 string.", () => {
       expect(C.encrypted).toBeTypeOf("string");
       expect(isBase64(C.encrypted)).toBeTruthy();
@@ -157,7 +229,6 @@ while (iterations--) {
       const testUrl = new URL(`https://example.com/${secret.cipher}`);
       testUrl.searchParams.set("k", wrappedKey);
       testUrl.searchParams.set("iv", secret.initVector);
-      test;
       expect(testUrl).toBeDefined();
       expect(testUrl.toString(), "Cipher is not in the URL.").toContain(
         secret.cipher,
@@ -178,7 +249,7 @@ while (iterations--) {
     test("Should decode safe URL back to base64", () => {
       expect(
         CripToe.decodeUrlSafeBase64(C.encrypted),
-        "Nota  base64 string.",
+        "Not a base64 string.",
       ).toMatch(CripToe.decodeUrlSafeBase64(secret.cipher));
     });
   });

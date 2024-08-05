@@ -1,5 +1,5 @@
 import { isBase64 } from "./index";
-import { ENCRYPT_RETURNS } from "./constants";
+import { ENCRYPT_RETURNS, WRAPKEY_RETURNS } from "./constants";
 
 interface CripToeOptions {
   /**
@@ -77,7 +77,7 @@ export type ExportedWraps = {
   /**
    * The secret key returned as encrypted by the wrapping key.
    **/
-  readonly wrappedKey: ArrayBuffer;
+  readonly wrappedKey: ArrayBuffer | string;
 };
 
 export type ExportedWrapsSafeURL = {
@@ -109,7 +109,8 @@ export type ExportedWrapsBase64 = {
   readonly wrappedKey: string;
 };
 
-export type ENCRYPT_RETURNS = typeof ENCRYPT_RETURNS;
+export type EncryptReturns = typeof ENCRYPT_RETURNS;
+export type WrapKeyReturns = typeof WRAPKEY_RETURNS;
 
 /** Provides Sha256 hashing and AES-GCM encryption and decryption of strings.*/
 export default class CripToe {
