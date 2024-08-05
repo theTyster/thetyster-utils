@@ -1,5 +1,5 @@
 import { ENCRYPT_RETURNS } from "./constants";
-import CripToe from "./CripToe";
+import * as CripToe from "./CripToe";
 
 export const calcAge = (anniversary: string): number =>
   Math.round(

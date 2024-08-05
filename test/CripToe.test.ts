@@ -10,7 +10,7 @@ import CripToe, {
 } from "../src/CripToe";
 import { isBase64 } from "../src/index";
 
-async function setup(safeURL: boolean, toBase64: boolean) {
+async function setup(safeURL: boolean | undefined, toBase64: boolean | undefined) {
   const longTestMessage = `A really long test message that may be encrypted to test whether a really long message can remain under 2000 characters in length for a URL. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected.  This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected.This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected. This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryption processes are working as expected.This is a test message that will be encrypted and then decrypted to ensure that the encryption and decryp`;
   const C = new CripToe(longTestMessage);
   let secret: EncryptReturns;
@@ -86,7 +86,8 @@ describe.each(variation)(
       safeURL,
       toBase64,
     );
-    console.log("wrappingkey: \n", wrappingKey);
+    if (!isBase64(wrappingKey)) {
+    }
     class CripToeTest extends CripToe {
       constructor() {
         super("Inner Class Tests");
