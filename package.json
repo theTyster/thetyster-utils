@@ -1,6 +1,6 @@
 {
   "name": "thetyster-utils",
-  "version": "1.4.2",
+  "version": "1.4.3",
   "description": "Utilities used by @thetyster.",
   "main": ".build/index.js",
   "types": "src/index.ts",
