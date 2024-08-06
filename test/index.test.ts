@@ -7,7 +7,7 @@ import Utils, {
   getLanguage,
   sleep,
   normalizeEpochDate,
-} from "../src/index";
+} from "../src/index.js";
 
 describe("Utils", () => {
   test("should be defined", () => {

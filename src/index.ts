@@ -1,4 +1,4 @@
-import * as C from "./CripToe";
+import * as C from "./CripToe.js";
 
 export const CripToe = C.default;
 

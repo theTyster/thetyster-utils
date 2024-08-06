@@ -1,5 +1,5 @@
-import { isBase64 } from "./index";
-import { ENCRYPT_RETURNS, WRAPKEY_RETURNS } from "./constants";
+import { isBase64 } from "./index.js";
+import { ENCRYPT_RETURNS, WRAPKEY_RETURNS } from "./constants.js";
 
 export type EncryptReturns = typeof ENCRYPT_RETURNS;
 export type WrapKeyReturns = typeof WRAPKEY_RETURNS;
