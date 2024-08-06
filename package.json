@@ -7,7 +7,11 @@
   "type": "module",
   "scripts": {
     "test": "vitest",
-    "build": "tsc"
+    "build": "tsc && npx rollup .build/index.js --file .build/index.cjs --format cjs --sourcemap"
+  },
+  "exports": {
+    "import": "./.build/index.js",
+    "require": "./.build/index.cjs"
   },
   "repository": {
     "type": "git",
@@ -24,6 +28,7 @@
   "homepage": "https://github.com/theTyster/thetyster-utils#readme",
   "devDependencies": {
     "@types/node": "^22.0.0",
+    "rollup": "^4.20.0",
     "vitest": "^2.0.4"
   }
 }
