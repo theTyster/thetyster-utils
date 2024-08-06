@@ -4,7 +4,7 @@ import { ENCRYPT_RETURNS, WRAPKEY_RETURNS } from "./constants";
 export type EncryptReturns = typeof ENCRYPT_RETURNS;
 export type WrapKeyReturns = typeof WRAPKEY_RETURNS;
 
-/** Provides Sha256 hashing and AES-GCM encryption and decryption of strings.*/
+/** Provides Sha256 hashing and AES-GCM encryption and decryption of strings. For Node.*/
 export default class CripToe {
   /**
    * The message originally provided to the instance for encryption.
@@ -19,10 +19,15 @@ export default class CripToe {
   /**
    * @param message - String to be encrypted or hashed.
    **/
-  constructor(message: string, password?: string, opts?: { silenceWarnings?: boolean }) {
-    if (message.length > 1260 && !opts?.silenceWarnings ){
+  constructor(
+    message: string,
+    password?: string,
+    opts?: { silenceWarnings?: boolean },
+  ) {
+    if (message.length > 1260 && !opts?.silenceWarnings) {
       console.warn(
-        `WARNING: The message supplied to ${this.constructor.name} is possibly too long for a URL.\nTests show that messages longer than 1,260 characters may exceed the maximum recommended length for a URL, which is 2,084 characters.\nlength:\n${message.length}\nmessage:\n${message}`);
+        `WARNING: The message supplied to ${this.constructor.name} is possibly too long for a URL.\nTests show that messages longer than 1,260 characters may exceed the maximum recommended length for a URL, which is 2,084 characters.\nlength:\n${message.length}\nmessage:\n${message}`,
+      );
     }
     this.message = message;
     this.encoded = new TextEncoder().encode(message);
@@ -240,7 +245,7 @@ export default class CripToe {
         } as ExportedWrapsSafeURL;
       } else if (opts.toBase64) {
         return {
-          wrappingKey: btoa(wrappingKeyString),
+          wrappingKey: Buffer.from(wrappingKeyString).toString("base64"),
           wrappedKey: CripToe.arrayBufferToBase64(this._wrappedKey),
         } as ExportedWrapsBase64;
       } else {
@@ -274,22 +279,14 @@ export default class CripToe {
    * Converts an Array Buffer to a base64 string.
    **/
   static arrayBufferToBase64(buffer: ArrayBuffer) {
-    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
+    return Buffer.from(buffer).toString("base64");
   }
 
   /**
    * Converts a base64 string into an Array Buffer
    **/
   static base64ToArrayBuffer(base64: string) {
-    const normalizedbase64 = CripToe.decodeUrlSafeBase64(base64);
-    const string = atob(normalizedbase64);
-    const buffer = new ArrayBuffer(string.length);
-    const bufferView = new Uint8Array(buffer);
-
-    for (let i = 0; i < string.length; i++) {
-      bufferView[i] = string.charCodeAt(i);
-    }
-    return buffer;
+    return Buffer.from(base64, "base64").buffer;
   }
 
   /**
@@ -302,18 +299,10 @@ export default class CripToe {
    * {@see CripToe.encrypted}
    **/
   static encodeUrlSafeBase64(cipher: string | ArrayBuffer) {
-    function stringCleaner(base64: string) {
-      const urlSafe = encodeURIComponent(base64);
-      return urlSafe;
-    }
     if (cipher instanceof ArrayBuffer) {
-      const base64 = CripToe.arrayBufferToBase64(cipher);
-      return stringCleaner(base64);
-    } else if (!isBase64(cipher)) {
-      const base64 = btoa(cipher);
-      return stringCleaner(base64);
+      return Buffer.from(cipher).toString("base64url");
     } else {
-      return cipher;
+      return Buffer.from(cipher, "base64").toString("base64url");
     }
   }
 
@@ -321,7 +310,7 @@ export default class CripToe {
    * Takes a base64 string that has been formatted with @link CripToe.encodeUrlSafeBase64
    **/
   static decodeUrlSafeBase64(urlSafe: string) {
-    const base64 = decodeURIComponent(urlSafe);
+    const base64 = Buffer.from(urlSafe, "base64url").toString("base64");
     return base64;
   }
 
@@ -338,10 +327,10 @@ export default class CripToe {
       const cryp = crypto.subtle;
       if (cryp instanceof SubtleCrypto) return cryp;
       else throw new Error("SubtleCrypto is not available.");
-    } else if ("Not in Node") {
+      /*    } else if ("Not in Node") {
       const cryp = window.crypto.subtle;
       if (cryp instanceof SubtleCrypto) return cryp;
-      else throw new Error("SubtleCrypto is not available.");
+      else throw new Error("SubtleCrypto is not available.");*/
     } else throw new Error("You are not in a supported environment.");
   })();
 
@@ -361,16 +350,16 @@ export default class CripToe {
   get random() {
     if (this.isNode) {
       return crypto.getRandomValues(new Uint8Array(intArrLength));
-    } else if ("Not in Node") {
-      return window.crypto.getRandomValues(new Uint8Array(intArrLength));
+      /*    } else if ("Not in Node") {
+      return window.crypto.getRandomValues(new Uint8Array(intArrLength));*/
     } else throw new Error("You are not in a supported environment.");
   }
 
   static random = () => {
     if (typeof process === "object" && process + "" === "[object process]") {
       return crypto.getRandomValues(new Uint8Array(intArrLength));
-    } else if ("Not in Node") {
-      return window.crypto.getRandomValues(new Uint8Array(intArrLength));
+      /*    } else if ("Not in Node") {
+      return window.crypto.getRandomValues(new Uint8Array(intArrLength));*/
     } else throw new Error("You are not in a supported environment.");
   };
 
@@ -380,8 +369,8 @@ export default class CripToe {
   private _iv = (() => {
     if (this.isNode) {
       return crypto.getRandomValues(new Uint8Array(intArrLength));
-    } else if ("Not in Node") {
-      return window.crypto.getRandomValues(new Uint8Array(intArrLength));
+      /*    } else if ("Not in Node") {
+      return window.crypto.getRandomValues(new Uint8Array(intArrLength));*/
     } else throw new Error("You are not in a supported environment.");
   })();
 
