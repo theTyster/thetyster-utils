@@ -10,7 +10,7 @@
     "build": "tsc && npx rollup .build/index.js --file .build/index.cjs --format cjs --sourcemap"
   },
   "exports": {
-    "import": "./.build/index.js",
+    "import": "./.build/index.ts",
     "require": "./.build/index.cjs"
   },
   "repository": {
