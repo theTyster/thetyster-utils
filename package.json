@@ -22,7 +22,7 @@
   "types": "dist/thetyster-utils.ts",
   "files": [
     "dist/thetyster-utils.js",
-    "dist/thetyster-utils.d.ts",
+    "dist/thetyster-utils.ts",
     "dist/thetyster-utils.js.map"
   ],
   "keywords": [
