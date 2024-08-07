@@ -19,7 +19,7 @@
     "build": "npm run _clear && npm run _tsc && npm run _rollup"
   },
   "main": "dist/thetyster-utils.js",
-  "types": "dist/thetyster-utils.d.ts",
+  "types": "dist/thetyster-utils.ts",
   "files": [
     "dist/thetyster-utils.js",
     "dist/thetyster-utils.d.ts",
