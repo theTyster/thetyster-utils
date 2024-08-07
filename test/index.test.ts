@@ -1,5 +1,5 @@
 import { describe, test, expect } from "vitest";
-import Utils, {
+import {
   calcAge,
   ranNumG,
   makeArray,
@@ -7,22 +7,19 @@ import Utils, {
   getLanguage,
   sleep,
   normalizeEpochDate,
-} from "../src/index.js";
+  isBase64,
+} from "../dist/thetyster-utils";
 
 describe("Utils", () => {
   test("should be defined", () => {
-    const u = Utils;
-    expect(u).toBeDefined();
-    expect(u.CripToe).toBeDefined();
-    expect(u.CripToe).toHaveProperty("random");
-    expect(u.calcAge).toBeDefined();
-    expect(u.ranNumG).toBeDefined();
-    expect(u.makeArray).toBeDefined();
-    expect(u.shuffle).toBeDefined();
-    expect(u.getLanguage).toBeDefined();
-    expect(u.sleep).toBeDefined();
-    expect(u.normalizeEpochDate).toBeDefined();
-    expect(u.isBase64).toBeDefined();
+    expect(calcAge).toBeDefined();
+    expect(ranNumG).toBeDefined();
+    expect(makeArray).toBeDefined();
+    expect(shuffle).toBeDefined();
+    expect(getLanguage).toBeDefined();
+    expect(sleep).toBeDefined();
+    expect(normalizeEpochDate).toBeDefined();
+    expect(isBase64).toBeDefined();
   });
 
   describe("calcAge", () => {
@@ -74,21 +71,21 @@ describe("Utils", () => {
   });
 });
 
-describe("mightBeBase65", () => {
+describe("mightBeBase64", () => {
   test("should return true if the string might be base64", () => {
-    expect.soft(Utils.isBase64("dGVzdA7r5f6gDgh4bxao+l==")).toBe(true);
-    expect.soft(Utils.isBase64("7r5f6grMv4hDgh4tosp/lg==")).toBe(true);
-    expect.soft(Utils.isBase64("hsFMy8Hk604LHf0En+e/sA==")).toBe(true);
-    expect.soft(Utils.isBase64("yR6au1Ag/NysRMznd9x7mQ==")).toBe(true);
-    expect.soft(Utils.isBase64("Xzs92E7PY0eGbY7LrxV6uQ==")).toBe(true);
-    expect.soft(Utils.isBase64("k8t3lvtKjWw57VgzZvKDnA==")).toBe(true);
-    expect.soft(Utils.isBase64("IApEOKTa6dc45/4zBnEz7g==")).toBe(true);
-    expect.soft(Utils.isBase64("Q4xj6s3GtMvM8zX2z6g9GQ==")).toBe(true);
+    expect.soft(isBase64("dGVzdA7r5f6gDgh4bxao+l==")).toBe(true);
+    expect.soft(isBase64("7r5f6grMv4hDgh4tosp/lg==")).toBe(true);
+    expect.soft(isBase64("hsFMy8Hk604LHf0En+e/sA==")).toBe(true);
+    expect.soft(isBase64("yR6au1Ag/NysRMznd9x7mQ==")).toBe(true);
+    expect.soft(isBase64("Xzs92E7PY0eGbY7LrxV6uQ==")).toBe(true);
+    expect.soft(isBase64("k8t3lvtKjWw57VgzZvKDnA==")).toBe(true);
+    expect.soft(isBase64("IApEOKTa6dc45/4zBnEz7g==")).toBe(true);
+    expect.soft(isBase64("Q4xj6s3GtMvM8zX2z6g9GQ==")).toBe(true);
   });
 
   test("should return false if the string is not base64", () => {
-    expect(Utils.isBase64("----")).toBe(false);
-    expect(Utils.isBase64("____")).toBe(false);
-    expect(Utils.isBase64("....")).toBe(false);
+    expect(isBase64("----")).toBe(false);
+    expect(isBase64("____")).toBe(false);
+    expect(isBase64("....")).toBe(false);
   });
 });

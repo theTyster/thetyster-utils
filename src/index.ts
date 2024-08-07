@@ -1,28 +1,24 @@
-import * as C from "./CripToe.js";
+export {
+  calcAge,
+  ranNumG,
+  makeArray,
+  shuffle,
+  getLanguage,
+  sleep,
+  normalizeEpochDate,
+  isBase64,
+};
 
-export const CripToe = C.default;
-
-export type EncryptReturns = C.EncryptReturns;
-export type EncryptReturnsSafeURL = C.EncryptReturnsSafeURL;
-export type EncryptReturnsBase64 = C.EncryptReturnsBase64;
-export type WrapKeyReturns = C.WrapKeyReturns;
-export type ExportedWrapsSafeURL = C.ExportedWrapsSafeURL;
-export type ExportedWrapsBase64 = C.ExportedWrapsBase64;
-export type ExportedWraps = C.ExportedWraps;
-
-export const calcAge = (anniversary: string): number =>
+const calcAge = (anniversary: string): number =>
   Math.round(
     Math.abs(new Date(anniversary).getTime() - new Date().getTime()) /
       8.64e7 /
-      365,
+      365
   );
 
-export const ranNumG = (max: number): number => Math.floor(Math.random() * max);
+const ranNumG = (max: number): number => Math.floor(Math.random() * max);
 
-export const makeArray = (
-  maxIndex: number,
-  useKeysBool?: boolean,
-): number[] => {
+const makeArray = (maxIndex: number, useKeysBool?: boolean): number[] => {
   if (useKeysBool) {
     return [...Array(maxIndex).keys()].map((x) => ++x);
   } else {
@@ -30,7 +26,7 @@ export const makeArray = (
   }
 };
 
-export const shuffle = (inputArr: number[]): number[] => {
+const shuffle = (inputArr: number[]): number[] => {
   const applyShuffler = () => {
     let len = inputArr.length;
     while (len) {
@@ -42,7 +38,7 @@ export const shuffle = (inputArr: number[]): number[] => {
   return applyShuffler();
 };
 
-export const getLanguage = (): string => {
+const getLanguage = (): string => {
   if (navigator.languages && navigator.languages.length) {
     return navigator.languages[0];
   } else {
@@ -50,11 +46,11 @@ export const getLanguage = (): string => {
   }
 };
 
-export const sleep = (time: number): Promise<void> =>
+const sleep = (time: number): Promise<void> =>
   new Promise((resolve) => setTimeout(resolve, time * 1000));
 
-export const normalizeEpochDate = (
-  dateString: ConstructorParameters<typeof Date>[0],
+const normalizeEpochDate = (
+  dateString: ConstructorParameters<typeof Date>[0]
 ): string => {
   const date = new Date(dateString);
   const format: Parameters<Date["toLocaleTimeString"]>[1] = {
@@ -67,7 +63,7 @@ export const normalizeEpochDate = (
   return `${date.toLocaleTimeString("en-US", format)}`;
 };
 
-export function isBase64(str: string): boolean {
+function isBase64(str: string): boolean {
   const notBase64 = /[^A-Z0-9+\/=]/i;
   const len = str.length;
   if (!len || len % 4 !== 0 || notBase64.test(str)) {
@@ -80,16 +76,3 @@ export function isBase64(str: string): boolean {
     (firstPaddingChar === len - 2 && str[len - 1] === "=")
   );
 }
-
-const Utils = {
-  CripToe,
-  calcAge,
-  ranNumG,
-  makeArray,
-  shuffle,
-  getLanguage,
-  sleep,
-  normalizeEpochDate,
-  isBase64,
-};
-export default Utils;

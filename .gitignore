@@ -1,3 +1,9 @@
+# Build artifacts
+.build
+thetyster-utils*
+dist
+
+
 # Logs
 logs
 *.log
