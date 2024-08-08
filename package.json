@@ -16,7 +16,8 @@
     "_tsc": "tsc",
     "_rollup": "rollup --config",
     "test": "npm run build && vitest",
-    "build": "npm run _clear && npm run _tsc && npm run _rollup"
+    "build": "npm run _clear && npm run _tsc && npm run _rollup",
+    "deploy": "npm run build && npm publish"
   },
   "main": "dist/thetyster-utils.js",
   "types": "dist/thetyster-utils.ts",
