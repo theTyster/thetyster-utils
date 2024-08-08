@@ -9,6 +9,8 @@ export {
   isBase64,
 };
 
+export { Falsy, ArrayOf } from "./types";
+
 const calcAge = (anniversary: string): number =>
   Math.round(
     Math.abs(new Date(anniversary).getTime() - new Date().getTime()) /
