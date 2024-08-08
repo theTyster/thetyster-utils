@@ -1,7 +1,7 @@
 {
   "name": "thetyster-utils",
   "type": "module",
-  "version": "2.0.3",
+  "version": "2.1.0",
   "description": "Utilities used by @thetyster.",
   "license": "GPL-3.0",
   "repository": {
